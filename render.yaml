@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: stripe-django
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn stripe_project.wsgi --bind 0.0.0.0:8000"
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
