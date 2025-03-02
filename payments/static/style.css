@@ -74,7 +74,6 @@
     font-size: 14px;
 }
 
-/* Общие стили для скруглённых кнопок */
 .rounded-button {
     background-color: #297bc2;
     color: white;
@@ -144,4 +143,21 @@
 .item img {
     width: 100%;
     height: auto;
+}
+
+.cart:hover {
+    background-color: #297bc2;
+}
+
+.cart a {
+    color: white;
+    text-decoration: none;
+}
+
+.rounded-button:hover {
+    background-color: #297bc2;
+}
+
+.submit {
+    margin-top: 20px;
 }
