@@ -1,33 +1,100 @@
+import json
+
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from django.conf import settings
+from django.views import View
+from .models import Item, Discount, Tax
+from django.shortcuts import redirect
 import stripe
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
-from .models import Item
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
-def buy_item(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
+@csrf_exempt
+def create_checkout_session(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            items = data.get('items', [])
 
-    session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[{
-            'price_data': {
-                'currency': 'usd',
-                'product_data': {
-                    'name': item.name,
-                    'description': item.description,
-                },
-                'unit_amount': int(item.price * 100),  # Stripe принимает цену в центах
-            },
-            'quantity': 1,
-        }],
-        mode='payment',
-        success_url='http://127.0.0.1:8000/success/',
-        cancel_url='http://127.0.0.1:8000/cancel/',
-    )
+            line_items = []
+            for item in items:
+                print(item)
+                product_id = int(item['id'])
+                items_info = get_object_or_404(Item, id=product_id)
+                price = stripe.Price.create(
+                    unit_amount=int(items_info.price * 100),
+                    currency='rub',
+                    product_data={
+                        'name': items_info.name,
+                    },
+                )
 
-    return JsonResponse({'session_id': session.id})
+                line_items.append({
+                    'price': price.id,
+                    'quantity': item['quantity'],
+                })
 
-def item_page(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
-    return render(request, 'item.html', {'item': item, 'stripe_public_key': settings.STRIPE_PUBLIC_KEY})
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=line_items,
+                mode='payment',
+                success_url=request.build_absolute_uri('/success/'),
+                cancel_url=request.build_absolute_uri('/cart/'),
+            )
+
+            return JsonResponse({
+                'session_id': session.id,
+                'stripe_public_key': settings.STRIPE_PUBLIC_KEY
+            })
+        except Exception as e:
+            error_response = {'error': str(e)}
+            print(error_response)
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Метод не разрешен'}, status=405)
+
+class ItemListView(View):
+    def get(self, request):
+        items = Item.objects.all()
+        cart = request.session.get('cart', [])
+        return render(request, 'list.html', {'items': items, 'cart': cart})
+
+
+class ItemDetailView(View):
+    def get(self, request, pk):
+        item = get_object_or_404(Item, pk=pk)
+        cart = request.session.get('cart', [])
+        return render(request, 'item.html', {'item': item, 'cart': cart})
+
+
+class CartView(View):
+    def get(self, request):
+        cart = request.session.get('cart', [])
+        items = Item.objects.filter(id__in=cart)
+
+        items_price = sum(item.price for item in items)
+        discount = Discount.objects.first()
+        tax = Tax.objects.first()
+
+        discount_amount = (discount.percentage / 100) * items_price if discount else 0
+        subtotal = items_price - discount_amount
+        tax_amount = (tax.percentage / 100) * subtotal if tax else 0
+        total_price = subtotal + tax_amount
+
+        return render(request, 'cart.html', {
+            'items': items,
+            'total_price': total_price,
+            'subtotal': subtotal,
+            'discount_amount': discount_amount,
+            'tax_amount': tax_amount,
+            'cart': cart
+        })
+
+    def post(self, request):
+        item_id = request.POST.get('item_id')
+        if item_id:
+            cart = request.session.get('cart', [])
+            cart.append(int(item_id))
+            request.session['cart'] = cart
+        return redirect('cart')

@@ -1,0 +1,48 @@
+.cart {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background-color: #297bc2;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.cart:hover {
+    background-color: #297bc2;
+}
+
+.cart a {
+    color: white;
+    text-decoration: none;
+}
+
+.rounded-button {
+    background-color: #297bc2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.rounded-button:hover {
+    background-color: #297bc2;
+}
+
+.submit {
+    margin-top: 20px;
+}

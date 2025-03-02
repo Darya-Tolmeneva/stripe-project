@@ -1,7 +1,9 @@
 from django.urls import path
-from .views import buy_item, item_page
+from .views import ItemListView, ItemDetailView, CartView, create_checkout_session
 
 urlpatterns = [
-    path('buy/<int:item_id>/', buy_item, name='buy-item'),
-    path('item/<int:item_id>/', item_page, name='item-page'),
+    path('', ItemListView.as_view(), name='item_list'),
+    path('buy/', create_checkout_session, name='create_checkout_session'),
+    path('item/<int:pk>/', ItemDetailView.as_view(), name='item_detail'),
+    path('cart/', CartView.as_view(), name='cart'),
 ]

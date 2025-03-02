@@ -1,0 +1,147 @@
+.cart-summary {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.cart-summary h2 {
+    margin-bottom: 20px;
+}
+
+.cart-summary ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.cart-summary ul li {
+    margin-bottom: 10px;
+}
+
+.cart-summary hr {
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 20px 0;
+}
+
+.btn-primary {
+    background-color: #297bc2;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: #297bc2;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    margin: 0 20px;
+}
+
+.quantity-btn {
+    background-color: #297bc2;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.quantity-btn:hover {
+    background-color: #297bc2;
+}
+
+.quantity-input {
+    width: 40px;
+    text-align: center;
+    margin: 0 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+/* Общие стили для скруглённых кнопок */
+.rounded-button {
+    background-color: #297bc2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.rounded-button:hover {
+    background-color: #297bc2;
+}
+
+.back-button {
+    margin-top: 20px;
+}
+
+#checkout-button {
+    margin-top: 20px;
+}
+
+.fa-arrow-left {
+    margin-right: 8px;
+}
+
+.cart {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background-color: #297bc2;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.cart:hover {
+    background-color: #297bc2;
+}
+
+.cart a {
+    color: white;
+    text-decoration: none;
+}
+
+.item {
+    display: inline-block;
+    width: 200px;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+.item img {
+    width: 100%;
+    height: auto;
+}
