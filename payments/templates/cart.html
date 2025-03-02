@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Корзина{% endblock %}
+
 
 {% block content %}
     <h1>Корзина</h1>
@@ -9,10 +10,10 @@
             <ul>
                 {% for item in items %}
                     <li class="cart-item">
-                        <span class="item-name">{{ item.name }}</span>
+                        <span class="item-name">{{ item.item.name }}</span>
                         <div class="quantity-control">
                             <button class="quantity-btn minus">-</button>
-                            <input type="text" class="quantity-input" value="1" readonly>
+                            <input type="text" class="quantity-input" value="{{ item.quantity }}" readonly>
                             <button class="quantity-btn plus">+</button>
                         </div>
                         <span class="item-price">{{ item.price }}</span>
@@ -20,14 +21,14 @@
                 {% endfor %}
             </ul>
             <hr>
-            <p>SUMMARY: {{ subtotal }} ₽</p>
-            <p>DISCOUNT: {{ discount_amount }}</p>
-            <p>TAXES: {{ tax_amount }}</p>
+            <p>SUMMARY: {{ subtotal|floatformat:2 }} ₽</p>
+            <p>DISCOUNT: {{ discount_amount|floatformat:2 }} ₽</p>
+            <p>TAXES: {{ tax_amount|floatformat:2 }} ₽</p>
             <hr>
-            <h2>TOTAL: {{ total_price }} ₽</h2>
+            <h2>TOTAL: {{ total_price|floatformat:2 }} ₽</h2>
         </div>
 
-       <button id="checkout-button" class="btn btn-primary rounded-button">Оформить заказ</button>
+        <button id="checkout-button" class="btn btn-primary rounded-button">Оформить заказ</button>
     {% else %}
         <p>Корзина пуста</p>
     {% endif %}
@@ -47,9 +48,10 @@
                 body: JSON.stringify({
                     items: [
                         {% for item in items %}
-                            {id: "{{ item.id }}", quantity: 1},
+                            {id: "{{ item.item.id }}", quantity: {{ item.quantity}}},
                         {% endfor %}
-                    ]
+                    ],
+                    total_price: {{ total_price|floatformat:2|default:0 }}
                 })
             })
                 .then(response => response.json())

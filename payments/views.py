@@ -2,12 +2,13 @@ import json
 
 from django.shortcuts import render, get_object_or_404
 from django.views import View
-from .models import Item, Discount, Tax
+from .models import Item, Discount, Tax, Order
 from django.shortcuts import redirect
 import stripe
 from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from collections import Counter
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -17,6 +18,7 @@ def create_checkout_session(request):
         try:
             data = json.loads(request.body)
             items = data.get('items', [])
+            total = data.get('total', 0)
 
             line_items = []
             for item in items:
@@ -71,19 +73,30 @@ class ItemDetailView(View):
 class CartView(View):
     def get(self, request):
         cart = request.session.get('cart', [])
+        print(cart)
         items = Item.objects.filter(id__in=cart)
+        cart_counts = Counter(cart)
 
-        items_price = sum(item.price for item in items)
+        item_with_count = [
+            {
+                'item': item,
+                'quantity': cart_counts.get(item.id, 0),
+                'price': item.price*cart_counts.get(item.id, 0)
+            }
+            for item in items
+        ]
+        items_price = sum(item.price * cart_counts.get(item.id, 0) for item in items)
+
         discount = Discount.objects.first()
         tax = Tax.objects.first()
 
         discount_amount = (discount.percentage / 100) * items_price if discount else 0
-        subtotal = items_price - discount_amount
-        tax_amount = (tax.percentage / 100) * subtotal if tax else 0
+        subtotal = items_price
+        tax_amount = (tax.percentage / 100) * (subtotal - discount_amount) if tax else 0
         total_price = subtotal + tax_amount
 
         return render(request, 'cart.html', {
-            'items': items,
+            'items': item_with_count,
             'total_price': total_price,
             'subtotal': subtotal,
             'discount_amount': discount_amount,
