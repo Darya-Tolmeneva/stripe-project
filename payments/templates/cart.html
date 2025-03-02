@@ -9,7 +9,9 @@
         <div class="cart-summary">
             <ul>
                 {% for item in items %}
-                    <li class="cart-item">
+                    <li class="cart-item"
+                        data-item-id="{{ item.item.id }}"
+                        data-quantity="{{ item.quantity }}">
                         <span class="item-name">{{ item.item.name }}</span>
                         <span class="quantity-input">{{ item.quantity }}</span>
                         <span class="item-price">{{ item.price }}</span>
@@ -21,7 +23,7 @@
             <p>DISCOUNT: {{ discount_amount|floatformat:2 }} ₽</p>
             <p>TAXES: {{ tax_amount|floatformat:2 }} ₽</p>
             <hr>
-            <h2>TOTAL: {{ total_price|floatformat:2 }} ₽</h2>
+            <h2 id="total_price">TOTAL: {{ total_price|floatformat:2 }} ₽</h2>
         </div>
 
         <button id="checkout-button" class="btn btn-primary rounded-button">Оформить заказ</button>
@@ -32,41 +34,7 @@
         <i class="fas fa-arrow-left"></i> Назад
     </button>
 
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        document.getElementById('checkout-button').addEventListener('click', function () {
-            fetch('/buy/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    items: [
-                        {% for item in items %}
-                            {id: "{{ item.item.id }}", quantity: {{ item.quantity}}},
-                        {% endfor %}
-                    ],
-                    total_price: {{ total_price|floatformat:2|default:0 }}
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.session_id) {
-                        const stripe = Stripe(data.stripe_public_key);
-                        stripe.redirectToCheckout({sessionId: data.session_id})
-                            .then(function (result) {
-                                if (result.error) {
-                                    console.error('Redirect error:', result.error);
-                                }
-                            });
-                    } else {
-                        console.error('Ошибка: Не получен session_id');
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка:', error);
-                });
-        });
-    </script>
+    <script src="{% static 'js/cart.js' %}"></script>
 {% endblock %}

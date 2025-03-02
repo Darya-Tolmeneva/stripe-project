@@ -19,6 +19,7 @@ def create_checkout_session(request):
             data = json.loads(request.body)
             items = data.get('items', [])
             total = data.get('total', 0)
+            print(data)
 
             line_items = []
             for item in items:
@@ -45,7 +46,6 @@ def create_checkout_session(request):
                 success_url=request.build_absolute_uri('/success/'),
                 cancel_url=request.build_absolute_uri('/cart/'),
             )
-
             return JsonResponse({
                 'session_id': session.id,
                 'stripe_public_key': settings.STRIPE_PUBLIC_KEY
@@ -111,3 +111,6 @@ class CartView(View):
             cart.append(int(item_id))
             request.session['cart'] = cart
         return redirect('cart')
+
+def success_view(request):
+    return render(request, 'success.html')
