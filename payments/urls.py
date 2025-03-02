@@ -6,5 +6,5 @@ urlpatterns = [
     path('buy/', create_checkout_session, name='create_checkout_session'),
     path('item/<uuid:pk>/', ItemDetailView.as_view(), name='item_detail'),
     path('cart/', CartView.as_view(), name='cart'),
-    path('success/', success_view,  name='success'),
+    path('success/', success_view, name='success'),
 ]
