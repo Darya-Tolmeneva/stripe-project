@@ -1,99 +1,69 @@
 import json
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from django.views import View
+from requests import session
+
 from .models import Item, Discount, Tax, Order
 from django.shortcuts import redirect
 import stripe
 from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from collections import Counter
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 @csrf_exempt
 def create_checkout_session(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            items = data.get('items', [])
-            total = data.get('total', 0)
-            print(data)
-
-            line_items = []
-            for item in items:
-                print(item)
-                product_id = int(item['id'])
-                items_info = get_object_or_404(Item, id=product_id)
-                price = stripe.Price.create(
-                    unit_amount=int(items_info.price * 100),
-                    currency='rub',
-                    product_data={
-                        'name': items_info.name,
-                    },
-                )
-
-                line_items.append({
-                    'price': price.id,
-                    'quantity': item['quantity'],
-                })
-
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=line_items,
-                mode='payment',
-                success_url=request.build_absolute_uri('/success/'),
-                cancel_url=request.build_absolute_uri('/cart/'),
-            )
-            return JsonResponse({
-                'session_id': session.id,
-                'stripe_public_key': settings.STRIPE_PUBLIC_KEY
-            })
-        except Exception as e:
-            error_response = {'error': str(e)}
-            print(error_response)
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Метод не разрешен'}, status=405)
+    order, created = Order.objects.get_or_create(is_confirmed=False)
+    return order.create_stripe_payment(request)
 
 class ItemListView(View):
     def get(self, request):
+        order, created = Order.objects.get_or_create(is_confirmed=False)
         items = Item.objects.all()
-        cart = request.session.get('cart', [])
-        return render(request, 'list.html', {'items': items, 'cart': cart})
+        print(order.items)
+        return render(request, 'list.html', {'items': items})
 
 
 class ItemDetailView(View):
     def get(self, request, pk):
+        order, created = Order.objects.get_or_create(is_confirmed=False)
         item = get_object_or_404(Item, pk=pk)
-        cart = request.session.get('cart', [])
-        return render(request, 'item.html', {'item': item, 'cart': cart})
+        return render(request, 'item.html', {'item': item})
 
 
 class CartView(View):
     def get(self, request):
-        cart = request.session.get('cart', [])
-        print(cart)
-        items = Item.objects.filter(id__in=cart)
-        cart_counts = Counter(cart)
+        order, created = Order.objects.get_or_create(is_confirmed=False)
 
-        item_with_count = [
-            {
+        item_with_count = []
+        items_price = 0
+        discount_amount = 0
+        tax_amount = 0
+
+        for item in order.items.all():
+            quantity = item.quantity
+            item_with_count.append({
                 'item': item,
-                'quantity': cart_counts.get(item.id, 0),
-                'price': item.price*cart_counts.get(item.id, 0)
-            }
-            for item in items
-        ]
-        items_price = sum(item.price * cart_counts.get(item.id, 0) for item in items)
+                'quantity': quantity,
+                'price': item.price * quantity
+            })
+            items_price += item.price * quantity
 
         discount = Discount.objects.first()
         tax = Tax.objects.first()
 
-        discount_amount = (discount.percentage / 100) * items_price if discount else 0
+        if discount:
+            discount_amount = (discount.percentage / 100) * items_price
+
         subtotal = items_price
-        tax_amount = (tax.percentage / 100) * (subtotal - discount_amount) if tax else 0
-        total_price = subtotal + tax_amount
+
+        if tax:
+            tax_amount = (tax.percentage / 100) * (subtotal - discount_amount)
+
+        total_price = subtotal + tax_amount - discount_amount
 
         return render(request, 'cart.html', {
             'items': item_with_count,
@@ -101,16 +71,22 @@ class CartView(View):
             'subtotal': subtotal,
             'discount_amount': discount_amount,
             'tax_amount': tax_amount,
-            'cart': cart
+            'cart': order
         })
 
     def post(self, request):
+        order, created = Order.objects.get_or_create(is_confirmed=False)
         item_id = request.POST.get('item_id')
         if item_id:
             cart = request.session.get('cart', [])
-            cart.append(int(item_id))
+            order.add_item(item_id)
             request.session['cart'] = cart
         return redirect('cart')
 
 def success_view(request):
+    order = Order.objects.filter(is_confirmed=False).order_by('-id').first()
+
+    if order:
+        order.is_confirmed = True
+        order.save()
     return render(request, 'success.html')

@@ -9,8 +9,8 @@
         {% csrf_token %}
         <input type="hidden" name="item_id" value="{{ item.id }}">
         <button type="submit" class="rounded-button">Добавить в корзину</button>
-        <button onclick="window.location.href='/'" class="back-button rounded-button">
-            <i class="fas fa-arrow-left"></i> Назад
-        </button>
     </form>
+    <button onclick="window.location.href='/'" class="back-button rounded-button">
+        <i class="fas fa-arrow-left"></i> Назад
+    </button>
 {% endblock %}
