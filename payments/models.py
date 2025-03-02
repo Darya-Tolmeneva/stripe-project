@@ -1,11 +1,13 @@
 import uuid
-from django.db import models
-from django.db.models import Sum, F, DecimalField
+
 import stripe
+from django.db import models
 from django.http import JsonResponse
+
 from stripe_project import settings
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
 
 class Item(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -38,18 +40,6 @@ class Order(models.Model):
     discount = models.ForeignKey(Discount, null=True, blank=True, on_delete=models.SET_NULL)
     tax = models.ForeignKey(Tax, null=True, blank=True, on_delete=models.SET_NULL)
     is_confirmed = models.BooleanField(default=False)
-
-    @property
-    def total_price(self):
-        items_price = self.items.aggregate(total=Sum('price', output_field=DecimalField()))['total'] or 0
-        discount_percentage = self.discount.percentage if self.discount else 0
-        tax_percentage = self.tax.percentage if self.tax else 0
-
-        discount_amount = (discount_percentage / 100) * items_price
-        subtotal = items_price - discount_amount
-        tax_amount = (tax_percentage / 100) * subtotal
-
-        return subtotal + tax_amount
 
     def add_item(self, item_id, quantity=1):
         item = Item.objects.get(id=item_id)
